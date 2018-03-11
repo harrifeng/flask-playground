@@ -1,47 +1,31 @@
 # -*- coding: utf-8 -*-
 from flask import Flask, request, jsonify, g, abort, make_response
 from sqlite3 import dbapi2 as sqlite3
+import time
+import util
+from flaskext.mysql import MySQL
+
 
 app = Flask(__name__)
-
 app.config.from_object('settings_dev')
 app.config.from_envvar('ABADMIN_CONFIG', silent=True)
+
+mysql = MySQL()
+mysql.init_app(app)
 
 
 def connect_db():
     """Connects to the specific database."""
-    rv = sqlite3.connect(app.config['DATABASE'])
-    rv.row_factory = sqlite3.Row
-    return rv
-
-
-def init_db():
-    """Initializes the database."""
-    db = get_db()
-    with app.open_resource('schema.sql', mode='r') as f:
-        db.cursor().executescript(f.read())
-    db.commit()
-
-
-@app.cli.command('initdb')
-def initdb_command():
-    """Creates the database tables."""
-    init_db()
-    print('Initialized the database.')
+    conn = mysql.connect()
+    cursor = conn.cursor()
+    return cursor
 
 
 def query_db(query, args=(), one=False):
     """Queries the database and returns a list of dictionaries."""
-    cur = get_db().execute(query, args)
-    rv = cur.fetchall()
-    return (rv[0] if rv else None) if one else rv
-
-
-def get_user_id(username):
-    """Convenience method to look up the id for a username."""
-    rv = query_db('select id from user where name = ?',
-                  [username], one=True)
-    return rv[0] if rv else None
+    cnt = get_db().execute(query, args)
+    rv = get_db().fetchone()
+    return (rv if rv else None)
 
 
 def get_db():
@@ -59,6 +43,28 @@ def close_db(error):
     if hasattr(g, 'sqlite_db'):
         g.sqlite_db.close()
         app.logger.info('close')
+
+# ------------------------------------
+# User
+# ------------------------------------
+
+
+def get_login_token(username, password):
+    user = query_db('''select id, password from user where
+            name = %s''', [username], one=True)
+    if user is None:
+        return None
+    print('''[user] ==>''', user)
+    if user[1] == password:
+        login_timestamp = int(time.time())
+        return util.create_token(user[0], login_timestamp)
+
+
+def get_user_id(username):
+    """Convenience method to look up the id for a username."""
+    rv = query_db('select id from user where name = ?',
+                  [username], one=True)
+    return rv[0] if rv else None
 
 
 def return_404():
@@ -102,8 +108,12 @@ def user():
     print('''[req_json] ==>''', req_json)
     if req_json is None or 'username' not in req_json or 'password' not in req_json:
         abort_with_error('参数不足')
-    id = get_user_id('fan')
-    return gen_success_data([{'id': id, 'user': 'usera'}])
+    token = get_login_token(req_json['username'], req_json['password'])
+    print('''[token] ==>''', token)
+    if token is None:
+        return gen_success_data(None)
+    else:
+        return gen_success_data([{'token': token}])
 
 
 if __name__ == '__main__':

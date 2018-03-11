@@ -1,5 +1,6 @@
-import os
-DATABASE = 'demo.db'
-USERNAME='admin'
-PASSWORD='default'
+MYSQL_DATABASE_HOST = 'localhost'
+MYSQL_DATABASE_PORT = 33306
+MYSQL_DATABASE_USER = 'root'
+MYSQL_DATABASE_PASSWORD = 'rootpass'
+MYSQL_DATABASE_DB = 'abtest'
 DEBUG = True
