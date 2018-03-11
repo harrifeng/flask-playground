@@ -31,8 +31,9 @@ def query_db_one(query, args=(), one=False):
 
 def query_db_all(query, args=(), one=False):
     """Queries the database and returns a list of dictionaries."""
-    get_db().cursor().execute(query, args)
-    rv = get_db().cursor().fetchall()
+    cursor = get_db().cursor()
+    cnt = cursor.execute(query, args)
+    rv = cursor.fetchall()
     return rv
 
 
@@ -134,7 +135,6 @@ def product_list():
     products = query_db_all('''select id, cname, ename, level from product''')
 
     data = []
-    print('''[products] ==>''', products)
     for product in products:
         data.append({
             'id': product[0],
@@ -178,6 +178,27 @@ def layer_close():
                          2, req_json['layer_id']])
     db.commit()
     return gen_success_data([{'id': req_json['layer_id']}])
+
+
+@app.route('/layer/list', methods=['POST'])
+def layer_list():
+    req_json = request.get_json(force=True, silent=True)
+    if req_json is None:
+        abort_with_error('参数不足')
+    if 'token' not in req_json or get_user_id_from_token(req_json['token']) is None:
+        abort_with_error('token无效')
+
+    product_id = req_json.get('product_id', 0)
+    if product_id > 0:
+        layers = query_db_all('''select id, name, create_time from layer where product_id=%s''',
+                              [product_id])
+    else:
+        layers = query_db_all('''select id, name, create_time from layer''')
+
+    data = []
+    print('''[layers] ==>''', layers)
+
+    return gen_success_data(data)
 
 
 if __name__ == '__main__':
