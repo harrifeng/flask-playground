@@ -13,6 +13,12 @@ def get_datetime_and_str(delta_days=0, fmt=FORMAT_STR):
     return (want, want.strftime(fmt))
 
 
+def get_datetime_str(delta_days=0, fmt=FORMAT_STR):
+    now = datetime.datetime.now()
+    want = now + datetime.timedelta(days=delta_days)
+    return want.strftime(fmt)
+
+
 def get_datetime_from_str(date_str, fmt=FORMAT_STR, def_date=None):
     try:
         if len(date_str) == 0:

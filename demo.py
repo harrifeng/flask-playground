@@ -16,14 +16,14 @@ mysql.init_app(app)
 def connect_db():
     """Connects to the specific database."""
     conn = mysql.connect()
-    cursor = conn.cursor()
-    return cursor
+    return conn
 
 
 def query_db_one(query, args=(), one=False):
     """Queries the database and returns a list of dictionaries."""
-    cnt = get_db().execute(query, args)
-    rv = get_db().fetchone()
+    cursor = get_db().cursor()
+    cnt = cursor.execute(query, args)
+    rv = cursor.fetchone()
     if cnt == 0:
         return None
     return rv
@@ -31,8 +31,8 @@ def query_db_one(query, args=(), one=False):
 
 def query_db_all(query, args=(), one=False):
     """Queries the database and returns a list of dictionaries."""
-    get_db().execute(query, args)
-    rv = get_db().fetchall()
+    get_db().cursor().execute(query, args)
+    rv = get_db().cursor().fetchall()
     return rv
 
 
@@ -40,9 +40,9 @@ def get_db():
     """Opens a new database connection if there is none yet for the
     current application context.
     """
-    if not hasattr(g, 'sqlite_db'):
-        g.sqlite_db = connect_db()
-    return g.sqlite_db
+    if not hasattr(g, 'mysql_db'):
+        g.mysql_db = connect_db()
+    return g.mysql_db
 
 
 @app.teardown_appcontext
@@ -149,12 +149,21 @@ def product_list():
 @app.route('/layer/add', methods=['POST'])
 def layer_add():
     req_json = request.get_json(force=True, silent=True)
-    if (req_json is None or 'name' not in req_json or
-        'product_id' not in req_json or
-            'params' not in req_json):
+    if req_json is None or 'product_id' not in req_json or 'name' not in req_json:
         abort_with_error('参数不足')
     if 'token' not in req_json or get_user_id_from_token(req_json['token']) is None:
         abort_with_error('token无效')
+    data = []
+    db = get_db()
+    cursor = db.cursor()
+    cursor.execute('''insert into layer(name, status, product_id, params, create_time,
+    update_time) values (%s, %s, %s, %s, %s, %s)''', [req_json['name'], 1,
+                                                      req_json['product_id'],
+                                                      req_json.get('params'),
+                                                      util.get_datetime_str(),
+                                                      util.get_datetime_str()])
+    rr = db.commit()
+    return gen_success_data([{'id': cursor.lastrowid}])
 
 
 if __name__ == '__main__':
