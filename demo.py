@@ -111,7 +111,7 @@ def user():
     token = get_login_token(req_json['username'], req_json['password'])
     print('''[token] ==>''', token)
     if token is None:
-        return gen_success_data(None)
+        abort_with_error('用户名或密码错误')
     else:
         return gen_success_data([{'token': token}])
 
