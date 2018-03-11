@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 from flask import Flask, request, jsonify, g, abort, make_response
 from sqlite3 import dbapi2 as sqlite3
 
@@ -90,8 +91,17 @@ def hello():
     return 'hello world'
 
 
-@app.route('/users')
+# @app.route('/users')
+# def user():
+#     id = get_user_id('fan')
+#     return gen_success_data([{'id': id, 'user': 'usera'}])
+
+@app.route('/user/login', methods=['POST'])
 def user():
+    req_json = request.get_json(force=True, silent=True)
+    print('''[req_json] ==>''', req_json)
+    if req_json is None or 'username' not in req_json or 'password' not in req_json:
+        abort_with_error('参数不足')
     id = get_user_id('fan')
     return gen_success_data([{'id': id, 'user': 'usera'}])
 
