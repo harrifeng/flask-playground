@@ -1,4 +1,4 @@
-from flask import Flask, request, jsonify, g
+from flask import Flask, request, jsonify, g, abort, make_response
 from sqlite3 import dbapi2 as sqlite3
 
 app = Flask(__name__)
@@ -41,14 +41,17 @@ def get_db():
 def return_404():
     ret = {
         'code': 0,
-        'message': '',
+        'message': 'm',
     }
     return jsonify(ret)
+
+def abort_with_error(code=1,message='bad request',http_code=400):
+    abort(make_response(jsonify(code=code, message=message), http_code))
 
 
 @app.route('/')
 def hello():
-    return return_404()
+    abort_with_error()
     return 'hello world'
 
 
