@@ -38,6 +38,14 @@ def get_db():
     return g.sqlite_db
 
 
+@app.teardown_appcontext
+def close_db(error):
+    """Closes the database again at the end of the request."""
+    if hasattr(g, 'sqlite_db'):
+        g.sqlite_db.close()
+        app.logger.info('close')
+
+
 def return_404():
     ret = {
         'code': 0,
@@ -45,12 +53,14 @@ def return_404():
     }
     return jsonify(ret)
 
-def abort_with_error(code=1,message='bad request',http_code=400):
+
+def abort_with_error(code=1, message='bad request', http_code=400):
     abort(make_response(jsonify(code=code, message=message), http_code))
 
 
 @app.route('/')
 def hello():
+    db = get_db()
     abort_with_error()
     return 'hello world'
 
