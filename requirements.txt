@@ -1,0 +1,7 @@
+Flask==0.12
+PyYAML==3.12
+Flask-RESTful==0.3.6
+peewee==3.1.0
+Flask-MySQL==1.4.0
+Flask-Cors==3.0.3
+gunicorn==19.7.1
