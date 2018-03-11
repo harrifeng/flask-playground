@@ -196,7 +196,12 @@ def layer_list():
         layers = query_db_all('''select id, name, create_time from layer''')
 
     data = []
-    print('''[layers] ==>''', layers)
+    for layer in layers:
+        data.append({
+            'id': layer[0],
+            'name': layer[1],
+            'create_time': util.get_str_from_datetime(layer[2])
+        })
 
     return gen_success_data(data)
 
