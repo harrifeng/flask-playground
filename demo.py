@@ -33,8 +33,8 @@ def query_db_one(query, args=(), one=False):
 def query_db_all(query, args=(), one=False):
     """Queries the database and returns a list of dictionaries."""
     cnt = get_db().execute(query, args)
-    rv = get_db().fetall()
-    return (rv, cnt)
+    rv = get_db().fetchall()
+    return rv
 
 
 def get_db():
@@ -78,7 +78,7 @@ def get_user_id_from_token(token):
 
     """Convenience method to look up the id for a username."""
     rv = query_db_one('select id from user where id = %s',
-                  [user_id], one=True)
+                      [user_id], one=True)
     return user_id if len(rv) == 1 else None
 
 
@@ -134,7 +134,18 @@ def product_list():
     if 'token' not in req_json or get_user_id_from_token(req_json['token']) is None:
         abort_with_error('token无效')
 
-    return gen_success_data()
+    products = query_db_all('''select id, cname, ename, level from product''')
+
+    data = []
+    for product in products:
+        data.append({
+            'id': product[0],
+            'cname': product[1],
+            'ename': product[2],
+            'level': product[3],
+        })
+
+    return gen_success_data(data)
 
 
 if __name__ == '__main__':
