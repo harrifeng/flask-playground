@@ -21,11 +21,20 @@ def connect_db():
     return cursor
 
 
-def query_db(query, args=(), one=False):
+def query_db_one(query, args=(), one=False):
     """Queries the database and returns a list of dictionaries."""
     cnt = get_db().execute(query, args)
     rv = get_db().fetchone()
-    return (rv if rv else None)
+    if cnt == 0:
+        return None
+    return rv
+
+
+def query_db_all(query, args=(), one=False):
+    """Queries the database and returns a list of dictionaries."""
+    cnt = get_db().execute(query, args)
+    rv = get_db().fetall()
+    return (rv, cnt)
 
 
 def get_db():
@@ -50,7 +59,7 @@ def close_db(error):
 
 
 def get_login_token(username, password):
-    user = query_db('''select id, password from user where
+    user = query_db_one('''select id, password from user where
             name = %s''', [username], one=True)
     if user is None:
         return None
@@ -60,7 +69,6 @@ def get_login_token(username, password):
         return util.create_token(user[0], login_timestamp)
 
 
-# def get_user_id(username):
 def get_user_id_from_token(token):
     try:
         user_id = util.parse_token(token)
@@ -69,7 +77,7 @@ def get_user_id_from_token(token):
         return None
 
     """Convenience method to look up the id for a username."""
-    rv = query_db('select id from user where id = %s',
+    rv = query_db_one('select id from user where id = %s',
                   [user_id], one=True)
     return user_id if len(rv) == 1 else None
 
