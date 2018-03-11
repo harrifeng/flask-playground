@@ -153,7 +153,6 @@ def layer_add():
         abort_with_error('参数不足')
     if 'token' not in req_json or get_user_id_from_token(req_json['token']) is None:
         abort_with_error('token无效')
-    data = []
     db = get_db()
     cursor = db.cursor()
     cursor.execute('''insert into layer(name, status, product_id, params, create_time,
@@ -162,7 +161,7 @@ def layer_add():
                                                       req_json.get('params'),
                                                       util.get_datetime_str(),
                                                       util.get_datetime_str()])
-    rr = db.commit()
+    db.commit()
     return gen_success_data([{'id': cursor.lastrowid}])
 
 
