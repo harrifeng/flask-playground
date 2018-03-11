@@ -1,6 +1,5 @@
 # -*- coding: utf-8 -*-
 from flask import Flask, request, jsonify, g, abort, make_response
-from sqlite3 import dbapi2 as sqlite3
 import time
 import util
 from flaskext.mysql import MySQL
@@ -32,7 +31,7 @@ def query_db_one(query, args=(), one=False):
 
 def query_db_all(query, args=(), one=False):
     """Queries the database and returns a list of dictionaries."""
-    cnt = get_db().execute(query, args)
+    get_db().execute(query, args)
     rv = get_db().fetchall()
     return rv
 
@@ -115,11 +114,9 @@ def hello():
 @app.route('/user/login', methods=['POST'])
 def user_login():
     req_json = request.get_json(force=True, silent=True)
-    print('''[req_json] ==>''', req_json)
     if req_json is None or 'username' not in req_json or 'password' not in req_json:
         abort_with_error('参数不足')
     token = get_login_token(req_json['username'], req_json['password'])
-    print('''[token] ==>''', token)
     if token is None:
         abort_with_error('用户名或密码错误')
     else:
@@ -137,6 +134,7 @@ def product_list():
     products = query_db_all('''select id, cname, ename, level from product''')
 
     data = []
+    print('''[products] ==>''', products)
     for product in products:
         data.append({
             'id': product[0],
@@ -146,6 +144,17 @@ def product_list():
         })
 
     return gen_success_data(data)
+
+
+@app.route('/layer/add', methods=['POST'])
+def layer_add():
+    req_json = request.get_json(force=True, silent=True)
+    if (req_json is None or 'name' not in req_json or
+        'product_id' not in req_json or
+            'params' not in req_json):
+        abort_with_error('参数不足')
+    if 'token' not in req_json or get_user_id_from_token(req_json['token']) is None:
+        abort_with_error('token无效')
 
 
 if __name__ == '__main__':
