@@ -60,11 +60,18 @@ def get_login_token(username, password):
         return util.create_token(user[0], login_timestamp)
 
 
-def get_user_id(username):
+# def get_user_id(username):
+def get_user_id_from_token(token):
+    try:
+        user_id = util.parse_token(token)
+        print('''[user_id] ==>''', user_id)
+    except Exception:
+        return None
+
     """Convenience method to look up the id for a username."""
-    rv = query_db('select id from user where name = ?',
-                  [username], one=True)
-    return rv[0] if rv else None
+    rv = query_db('select id from user where id = %s',
+                  [user_id], one=True)
+    return user_id if len(rv) == 1 else None
 
 
 def return_404():
@@ -97,13 +104,8 @@ def hello():
     return 'hello world'
 
 
-# @app.route('/users')
-# def user():
-#     id = get_user_id('fan')
-#     return gen_success_data([{'id': id, 'user': 'usera'}])
-
 @app.route('/user/login', methods=['POST'])
-def user():
+def user_login():
     req_json = request.get_json(force=True, silent=True)
     print('''[req_json] ==>''', req_json)
     if req_json is None or 'username' not in req_json or 'password' not in req_json:
@@ -114,6 +116,17 @@ def user():
         abort_with_error('用户名或密码错误')
     else:
         return gen_success_data([{'token': token}])
+
+
+@app.route('/product/list', methods=['POST'])
+def product_list():
+    req_json = request.get_json(force=True, silent=True)
+    if req_json is None:
+        abort_with_error('参数不足')
+    if 'token' not in req_json or get_user_id_from_token(req_json['token']) is None:
+        abort_with_error('token无效')
+
+    return gen_success_data()
 
 
 if __name__ == '__main__':
