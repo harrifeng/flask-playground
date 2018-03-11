@@ -29,6 +29,20 @@ def initdb_command():
     print('Initialized the database.')
 
 
+def query_db(query, args=(), one=False):
+    """Queries the database and returns a list of dictionaries."""
+    cur = get_db().execute(query, args)
+    rv = cur.fetchall()
+    return (rv[0] if rv else None) if one else rv
+
+
+def get_user_id(username):
+    """Convenience method to look up the id for a username."""
+    rv = query_db('select id from user where name = ?',
+                  [username], one=True)
+    return rv[0] if rv else None
+
+
 def get_db():
     """Opens a new database connection if there is none yet for the
     current application context.
@@ -58,11 +72,28 @@ def abort_with_error(code=1, message='bad request', http_code=400):
     abort(make_response(jsonify(code=code, message=message), http_code))
 
 
+def gen_success_data(contents=None, total_page=1, current_page=1):
+    code = 0
+    message = ''
+    data = []
+    if contents is not None:
+        data = contents
+    return jsonify(code=code,
+                   message=message,
+                   data=data,
+                   total_page=total_page,
+                   current_page=current_page)
+
+
 @app.route('/')
 def hello():
-    db = get_db()
-    abort_with_error()
     return 'hello world'
+
+
+@app.route('/users')
+def user():
+    id = get_user_id('fan')
+    return gen_success_data([{'id': id, 'user': 'usera'}])
 
 
 if __name__ == '__main__':
