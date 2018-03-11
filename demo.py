@@ -165,5 +165,20 @@ def layer_add():
     return gen_success_data([{'id': cursor.lastrowid}])
 
 
+@app.route('/layer/close', methods=['POST'])
+def layer_close():
+    req_json = request.get_json(force=True, silent=True)
+    if req_json is None or 'layer_id' not in req_json:
+        abort_with_error('参数不足')
+    if 'token' not in req_json or get_user_id_from_token(req_json['token']) is None:
+        abort_with_error('token无效')
+    db = get_db()
+    cursor = db.cursor()
+    row = cursor.execute('''update layer set status=%s where id=%s''', [
+                         2, req_json['layer_id']])
+    db.commit()
+    return gen_success_data([{'id': req_json['layer_id']}])
+
+
 if __name__ == '__main__':
     app.run(host='0.0.0.0')
