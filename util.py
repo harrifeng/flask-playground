@@ -64,3 +64,6 @@ def parse_token(token):
     # token时效性 TODO
 
     return user_id
+
+if __name__ == '__main__':
+    print(get_datetime_str(0))

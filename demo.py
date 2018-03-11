@@ -206,5 +206,22 @@ def layer_list():
     return gen_success_data(data)
 
 
+@app.route('/layer/traffic', methods=['POST'])
+def layer_traffic():
+    req_json = request.get_json(force=True, silent=True)
+    if req_json is None or 'layer_id' not in req_json:
+        abort_with_error('参数不足')
+    if 'token' not in req_json or get_user_id_from_token(req_json['token']) is None:
+        abort_with_error('token无效')
+
+    layer_id = req_json['layer_id']
+    groups = query_db_all('''select segment_num from exp_group where layer_id=%s and
+        status = 1 and end_time > %s''', [layer_id, util.get_datetime_str(0)])
+
+    rest = 1000 - sum(group[0] for group in groups)
+    data = [{'segment': rest}]
+    return gen_success_data(data)
+
+
 if __name__ == '__main__':
     app.run(host='0.0.0.0')
