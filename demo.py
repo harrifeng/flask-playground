@@ -1,4 +1,5 @@
-from flask import Flask, request, jsonify
+from flask import Flask, request, jsonify, g
+from sqlite3 import dbapi2 as sqlite3
 
 app = Flask(__name__)
 
