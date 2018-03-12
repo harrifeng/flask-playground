@@ -81,6 +81,26 @@ def get_user_id_from_token(token):
                       [user_id], one=True)
     return user_id if len(rv) == 1 else None
 
+# ------------------------------------
+# Layer
+# ------------------------------------
+
+
+def get_unused_segments(layer_id):
+    groups = query_db_all('''select segments from exp_group where status=1
+    and layer_id = %s and end_time > %s ''', [layer_id, util.get_datetime_str(0)])
+    total = [True] * 1000
+    print('''[groups] ==>''', groups)
+    for group in groups:
+        segs = group[0].split(',')
+        for seg in segs:
+            if seg.isdigit():
+                index = int(seg) % 1000
+            else:
+                index = 0
+            total[index] = False
+    return [str(i) for i in range(1000) if total[i]]
+
 
 def return_404():
     ret = {
@@ -220,6 +240,40 @@ def layer_traffic():
 
     rest = 1000 - sum(group[0] for group in groups)
     data = [{'segment': rest}]
+    return gen_success_data(data)
+
+
+@app.route('/group/add_one', methods=['POST'])
+def group_add_one():
+    req_json = request.get_json(force=True, silent=True)
+    if (req_json is None or 'layer_id' not in req_json or
+                'name' not in req_json or
+                'segment' not in req_json or
+            'filter' not in req_json or
+            'end_time' not in req_json
+            ):
+        abort_with_error('参数不足')
+    if 'token' not in req_json or get_user_id_from_token(req_json['token']) is None:
+        abort_with_error('token无效')
+
+    unused_segments = get_unused_segments(req_json['layer_id'])
+    segment_num = req_json['segment']
+    if len(unused_segments) < segment_num:
+        abort_with_error('segment余量不足')
+
+    # db = get_db()
+    # cursor = db.cursor()
+    # cursor.execute('''insert into group(name, status, product_id, params, create_time,
+    # update_time) values (%s, %s, %s, %s, %s, %s)''', [req_json['name'], 1,
+    #                                                   req_json['product_id'],
+    #                                                   req_json.get('params'),
+    #                                                   util.get_datetime_str(),
+    #                                                   util.get_datetime_str()])
+    # db.commit()
+    # return gen_success_data([{'id': cursor.lastrowid}])
+
+
+    data = []
     return gen_success_data(data)
 
 
